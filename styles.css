@@ -276,6 +276,10 @@ body {
     height: 100vh;
     padding: 20px;
     background: #5f7c8a;
+    /* Editor scrolls on its own when content is taller than the screen
+       (e.g. seven day columns). Display view stays fixed/non-scrolling. */
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .editor-header {
@@ -434,7 +438,7 @@ body {
 .video-editor {
     display: none;
     flex-direction: column;
-    height: 100vh;
+    flex: 1 0 auto;
     padding: 20px;
     background: #34495e;
 }
