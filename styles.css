@@ -281,7 +281,7 @@ body {
 .editor-header {
     background: rgba(255, 255, 255, 0.9);
     color: #333;
-    padding: 20px;
+    padding: 20px 20px 20px 84px;
     border-radius: 10px;
     margin-bottom: 20px;
 }
@@ -571,15 +571,50 @@ body {
     cursor: not-allowed;
 }
 
-/* Controls */
-.controls {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
+/* Hamburger menu */
+.menu-container {
+    position: fixed;
+    top: 22px;
+    left: 22px;
+    z-index: 900;
 }
 
-.controls button {
+.menu-toggle {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 8px;
+    background: #3498db;
+    color: white;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: background-color 0.2s;
+}
+
+.menu-toggle:hover {
+    background: #2980b9;
+}
+
+.menu-panel {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    min-width: 220px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.menu-panel.open {
+    display: flex;
+}
+
+.menu-panel button {
+    width: 100%;
     padding: 12px 24px;
     border: none;
     border-radius: 8px;

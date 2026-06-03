@@ -44,6 +44,19 @@
 
         <!-- Editor View -->
         <div id="editorView" class="editor-view">
+            <!-- Hamburger menu (always reachable, no scrolling needed) -->
+            <div class="menu-container">
+                <button id="menuToggle" class="menu-toggle" aria-label="Menu" aria-expanded="false">☰</button>
+                <div id="menuPanel" class="menu-panel">
+                    <button id="saveBtn" class="btn-primary">SAVE</button>
+                    <button id="saveVideosBtn" class="btn-success" style="display:none;">SAVE VIDEOS</button>
+                    <button id="displayBtn" class="btn-primary">DISPLAY CALENDAR</button>
+                    <button id="loadBtn" class="btn-secondary">LOAD</button>
+                    <button id="toggleQR" class="btn-secondary">Turn QR Code on</button>
+                    <button id="resetBtn" class="btn-danger">RESET</button>
+                </div>
+            </div>
+
             <div class="editor-header">
                 <div class="editor-title">Weekly Schedule Events Editor</div>
                 <div class="tab-buttons">
@@ -94,14 +107,6 @@
                 </div>
             </div>
 
-            <div class="controls">
-                <button id="toggleQR" class="btn-secondary">Turn QR Code on</button>
-                <button id="saveBtn" class="btn-primary">SAVE</button>
-                <button id="resetBtn" class="btn-danger">RESET</button>
-                <button id="loadBtn" class="btn-secondary">LOAD</button>
-                <button id="saveVideosBtn" class="btn-success" style="display:none;">SAVE VIDEOS</button>
-                <button id="displayBtn" class="btn-primary">DISPLAY CALENDAR</button>
-            </div>
         </div>
     </div>
 

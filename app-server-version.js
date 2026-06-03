@@ -235,9 +235,40 @@ class ChildLifeCalendar {
             this.setRotationSeconds(e.target.value);
         });
 
+        // Hamburger menu (holds the Save/Load/Reset/Display controls)
+        this.setupMenu();
+
         // Generate editor fields
         this.generateEditorFields();
         this.generateVideoScheduleGrid();
+    }
+
+    setupMenu() {
+        const menuToggle = document.getElementById('menuToggle');
+        const menuPanel = document.getElementById('menuPanel');
+        if (!menuToggle || !menuPanel) return;
+
+        const closeMenu = () => {
+            menuPanel.classList.remove('open');
+            menuToggle.setAttribute('aria-expanded', 'false');
+        };
+
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = menuPanel.classList.toggle('open');
+            menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // Close after picking an action inside the menu.
+        menuPanel.addEventListener('click', () => closeMenu());
+
+        // Close when clicking anywhere outside the menu.
+        document.addEventListener('click', (e) => {
+            if (menuPanel.classList.contains('open') &&
+                !menuPanel.contains(e.target) && e.target !== menuToggle) {
+                closeMenu();
+            }
+        });
     }
 
     generateEditorFields() {
