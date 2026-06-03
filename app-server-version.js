@@ -7,6 +7,37 @@
 
 const VIDEO_SERVER_URL = 'http://localhost:8080';
 
+// Single source of truth for the week. Index in this array == day offset from
+// the (Monday) week start, so DAYS[0]=Monday ... DAYS[6]=Sunday.
+// Each day owns three consecutive event indices: Morning, Afternoon, Evening.
+const DAYS = [
+    { name: 'Monday',    key: 'mon', indices: [0, 1, 2] },
+    { name: 'Tuesday',   key: 'tue', indices: [3, 4, 5] },
+    { name: 'Wednesday', key: 'wed', indices: [6, 7, 8] },
+    { name: 'Thursday',  key: 'thu', indices: [9, 10, 11] },
+    { name: 'Friday',    key: 'fri', indices: [12, 13, 14] },
+    { name: 'Saturday',  key: 'sat', indices: [15, 16, 17] },
+    { name: 'Sunday',    key: 'sun', indices: [18, 19, 20] }
+];
+const DAY_KEYS = DAYS.map(d => d.key);
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+const TIMES = ['morning', 'afternoon', 'evening'];
+const TIMES_CAP = ['Morning', 'Afternoon', 'Evening'];
+
+const TIME_OPTIONS = {
+    morning: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
+    afternoon: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'],
+    evening: ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30']
+};
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December"];
+
+const DEFAULT_ROTATION_SECONDS = 15;
+const MIN_ROTATION_SECONDS = 3;
+const MAX_ROTATION_SECONDS = 600;
+const SCHEMA_VERSION = 2;
+
 class ChildLifeCalendar {
     constructor() {
         // Core data
@@ -16,34 +47,46 @@ class ChildLifeCalendar {
         this.currentMonth = 4;
         this.qrCodeVisible = false;
         this.selectedWeekStart = this.getMondayOfCurrentWeek();
-        
+        this.rotationSeconds = DEFAULT_ROTATION_SECONDS;
+
         // UI state
         this.currentView = 'display';
         this.currentTab = 'events';
-        
+
         // Video playback
         this.scheduledVideoTimer = null;
         this.isVideoPlaying = false;
         this.videoCounters = {};
-        
+
+        // Display rotation
+        this.rotationTimer = null;
+        this.rotationIndex = 0;
+        // The order screens cycle through: each day on its own, then the full
+        // Mon-Fri grid, then a Saturday + Sunday weekend screen.
+        this.rotationSequence = [
+            ...DAYS.map(d => ({ type: 'day', day: d.key })),
+            { type: 'weekgrid' },
+            { type: 'weekend' }
+        ];
+
         this.init();
     }
 
     init() {
         console.log('🎯 Child Life Calendar initializing (Server Version)...');
-        
+
         try {
             this.setupEventListeners();
             this.initializeVideoCounters();
             this.loadFromStorage();
-            this.updateDisplay();
             this.applyMonthTheme(this.currentMonth);
             this.updateWeekDisplay();
             this.checkServerAndLoadVideos();
             this.startVideoScheduleChecker();
-            
+            this.startRotation();
+
             setTimeout(() => this.requestFullscreen(), 1000);
-            
+
             console.log('✅ Initialization complete');
         } catch (error) {
             console.error('❌ Error during initialization:', error);
@@ -58,11 +101,8 @@ class ChildLifeCalendar {
     }
 
     initializeVideoCounters() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const times = ['morning', 'afternoon', 'evening'];
-        
-        days.forEach(day => {
-            times.forEach(time => {
+        DAY_KEYS.forEach(day => {
+            TIMES.forEach(time => {
                 const key = `${day}-${time}`;
                 if (!(key in this.videoCounters)) {
                     this.videoCounters[key] = 0;
@@ -77,61 +117,58 @@ class ChildLifeCalendar {
     async checkServerAndLoadVideos() {
         console.log('🔍 Checking video server...');
         const displayEl = document.getElementById('folderDisplay');
-        
+
         try {
             const response = await fetch(`${VIDEO_SERVER_URL}/videos/`);
-            
+
             if (!response.ok) {
                 throw new Error('Server not responding');
             }
-            
+
             const html = await response.text();
-            
+
             // Parse video files from the server's HTML response
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const videoLinks = doc.querySelectorAll('a[href*=".mp4"], a[href*=".avi"], a[href*=".mov"], a[href*=".wmv"], a[href*=".webm"], a[href*=".mkv"], a[href*=".m4v"]');
-            
+
             this.availableVideos = Array.from(videoLinks).map(link => {
                 const href = link.getAttribute('href');
                 // Extract just the filename from /videos/filename.mp4
                 return href.split('/').pop();
             });
-            
+
             console.log(`✅ Found ${this.availableVideos.length} videos on server`);
             console.log('📹 Videos:', this.availableVideos);
-            
+
             if (displayEl) {
                 displayEl.textContent = `✓ Server connected (${this.availableVideos.length} videos available)`;
                 displayEl.style.color = '#27ae60';
             }
-            
+
             this.populateVideoDropdowns();
-            
+
         } catch (error) {
             console.error('❌ Video server not accessible:', error);
-            
+
             if (displayEl) {
                 displayEl.textContent = '❌ Video server not running! Start video-server.ps1';
                 displayEl.style.color = '#e74c3c';
             }
-            
+
             this.availableVideos = [];
         }
     }
 
     populateVideoDropdowns() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const times = ['morning', 'afternoon', 'evening'];
-
-        days.forEach(day => {
-            times.forEach(time => {
+        DAY_KEYS.forEach(day => {
+            TIMES.forEach(time => {
                 const key = `${day}-${time}`;
                 const container = document.querySelector(`[data-slot="${key}"]`);
-                
+
                 if (container) {
                     const existingEntries = container.querySelectorAll('.video-entry');
-                    
+
                     existingEntries.forEach(entry => {
                         const videoSelect = entry.querySelector('.video-select');
                         if (videoSelect) {
@@ -139,7 +176,7 @@ class ChildLifeCalendar {
                             while (videoSelect.children.length > 1) {
                                 videoSelect.removeChild(videoSelect.lastChild);
                             }
-                            
+
                             this.availableVideos.forEach(filename => {
                                 const option = document.createElement('option');
                                 option.value = filename;
@@ -151,7 +188,7 @@ class ChildLifeCalendar {
                 }
             });
         });
-        
+
         console.log('✅ Video dropdowns populated');
     }
 
@@ -189,7 +226,13 @@ class ChildLifeCalendar {
             if (e.target.value) {
                 this.selectedWeekStart = new Date(e.target.value + 'T00:00:00');
                 this.updateWeekDisplay();
+                this.renderCurrentScreen();
             }
+        });
+
+        // Rotation timing
+        document.getElementById('rotationSeconds')?.addEventListener('change', (e) => {
+            this.setRotationSeconds(e.target.value);
         });
 
         // Generate editor fields
@@ -201,17 +244,7 @@ class ChildLifeCalendar {
         const editorBody = document.getElementById('eventsEditorTab');
         if (!editorBody) return;
 
-        const days = [
-            { name: 'Monday', key: 'mon', index: [0, 1, 2] },
-            { name: 'Tuesday', key: 'tue', index: [3, 4, 5] },
-            { name: 'Wednesday', key: 'wed', index: [6, 7, 8] },
-            { name: 'Thursday', key: 'thu', index: [9, 10, 11] },
-            { name: 'Friday', key: 'fri', index: [12, 13, 14] }
-        ];
-
-        const times = ['Morning', 'Afternoon', 'Evening'];
-
-        days.forEach(day => {
+        DAYS.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'editor-day';
             dayDiv.innerHTML = `
@@ -219,8 +252,8 @@ class ChildLifeCalendar {
                 <div class="date-display" id="editor-date-${day.key}"></div>
             `;
 
-            times.forEach((time, i) => {
-                const eventIndex = day.index[i];
+            TIMES_CAP.forEach((time, i) => {
+                const eventIndex = day.indices[i];
                 const slotDiv = document.createElement('div');
                 slotDiv.className = 'editor-slot';
                 slotDiv.innerHTML = `
@@ -243,41 +276,13 @@ class ChildLifeCalendar {
 
             editorBody.appendChild(dayDiv);
         });
-
-        // Weekend section
-        const weekendDiv = document.createElement('div');
-        weekendDiv.className = 'weekend-editor';
-        weekendDiv.innerHTML = `
-            <h3>Weekend Events</h3>
-            <textarea id="input-20" placeholder="Weekend events..."></textarea>
-        `;
-        editorBody.appendChild(weekendDiv);
-
-        document.getElementById('input-20')?.addEventListener('input', (e) => {
-            this.events[20] = e.target.value || "No Event";
-        });
     }
 
     generateVideoScheduleGrid() {
         const videoGrid = document.getElementById('videoGrid');
         if (!videoGrid) return;
 
-        const days = [
-            { name: 'Monday', key: 'mon' },
-            { name: 'Tuesday', key: 'tue' },
-            { name: 'Wednesday', key: 'wed' },
-            { name: 'Thursday', key: 'thu' },
-            { name: 'Friday', key: 'fri' }
-        ];
-
-        const times = ['morning', 'afternoon', 'evening'];
-        const timeOptions = {
-            morning: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
-            afternoon: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'],
-            evening: ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30']
-        };
-
-        days.forEach(day => {
+        DAYS.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'video-day';
             dayDiv.innerHTML = `
@@ -285,7 +290,7 @@ class ChildLifeCalendar {
                 <div class="date-display" id="video-date-${day.key}"></div>
             `;
 
-            times.forEach(time => {
+            TIMES.forEach(time => {
                 const slotKey = `${day.key}-${time}`;
                 const slotDiv = document.createElement('div');
                 slotDiv.className = 'video-slot';
@@ -297,14 +302,14 @@ class ChildLifeCalendar {
                 `;
 
                 // Add initial video entry
-                this.addVideoEntry(slotDiv.querySelector('.video-entries'), day.key, time, timeOptions[time]);
+                this.addVideoEntry(slotDiv.querySelector('.video-entries'), day.key, time, TIME_OPTIONS[time]);
 
                 // Add button event
                 slotDiv.querySelector('.add-video-btn').addEventListener('click', (e) => {
                     const entriesContainer = e.target.previousElementSibling;
-                    this.addVideoEntry(entriesContainer, day.key, time, timeOptions[time]);
+                    this.addVideoEntry(entriesContainer, day.key, time, TIME_OPTIONS[time]);
                     this.videoCounters[slotKey]++;
-                    
+
                     if (this.videoCounters[slotKey] >= 5) {
                         e.target.disabled = true;
                         e.target.textContent = 'Max 5 videos';
@@ -321,7 +326,7 @@ class ChildLifeCalendar {
     addVideoEntry(container, day, time, timeOptions) {
         const entryDiv = document.createElement('div');
         entryDiv.className = 'video-entry';
-        
+
         const slotKey = `${day}-${time}`;
         const index = this.videoCounters[slotKey] || 0;
         this.videoCounters[slotKey] = index + 1;
@@ -336,7 +341,7 @@ class ChildLifeCalendar {
         const videoSelect = document.createElement('select');
         videoSelect.className = 'video-select';
         videoSelect.innerHTML = '<option value="">Select Video</option>';
-        
+
         this.availableVideos.forEach(filename => {
             videoSelect.innerHTML += `<option value="${filename}">${filename}</option>`;
         });
@@ -348,7 +353,7 @@ class ChildLifeCalendar {
             entryDiv.remove();
             this.videoCounters[slotKey]--;
             this.updateVideoSchedule();
-            
+
             const addBtn = container.parentElement.querySelector('.add-video-btn');
             if (addBtn.disabled) {
                 addBtn.disabled = false;
@@ -366,22 +371,19 @@ class ChildLifeCalendar {
     }
 
     updateVideoSchedule() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const times = ['morning', 'afternoon', 'evening'];
-
-        days.forEach(day => {
-            times.forEach(time => {
+        DAY_KEYS.forEach(day => {
+            TIMES.forEach(time => {
                 const key = `${day}-${time}`;
                 const container = document.querySelector(`[data-slot="${key}"]`);
-                
+
                 if (container) {
                     const entries = container.querySelectorAll('.video-entry');
                     this.videoSchedule[key] = [];
-                    
+
                     entries.forEach(entry => {
                         const timeSelect = entry.querySelector('.time-select');
                         const videoSelect = entry.querySelector('.video-select');
-                        
+
                         if (timeSelect.value && videoSelect.value) {
                             this.videoSchedule[key].push({
                                 time: timeSelect.value,
@@ -396,7 +398,7 @@ class ChildLifeCalendar {
 
     startVideoScheduleChecker() {
         console.log('⏰ Starting video schedule checker...');
-        
+
         this.scheduledVideoTimer = setInterval(() => {
             if (!this.isVideoPlaying && this.currentView === 'display') {
                 this.checkForScheduledVideo();
@@ -432,7 +434,7 @@ class ChildLifeCalendar {
     }
 
     getCurrentDayKey(date) {
-        const dayMap = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri' };
+        const dayMap = { 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat' };
         return dayMap[date.getDay()] || null;
     }
 
@@ -461,7 +463,7 @@ class ChildLifeCalendar {
 
     playScheduledVideo(videoFileName) {
         console.log(`🎬 Playing video: ${videoFileName}`);
-        
+
         this.isVideoPlaying = true;
         const videoURL = `${VIDEO_SERVER_URL}/videos/${videoFileName}`;
         const videoElement = document.getElementById('mainVideo');
@@ -474,7 +476,7 @@ class ChildLifeCalendar {
 
         videoElement.src = videoURL;
         videoPlayer.style.display = 'flex';
-        
+
         // Try to go fullscreen
         if (videoPlayer.requestFullscreen) {
             videoPlayer.requestFullscreen().catch(err => {
@@ -485,7 +487,7 @@ class ChildLifeCalendar {
 
     stopVideo() {
         console.log('⏹️ Stopping video');
-        
+
         const videoElement = document.getElementById('mainVideo');
         const videoPlayer = document.getElementById('videoPlayer');
 
@@ -508,7 +510,7 @@ class ChildLifeCalendar {
                                 docEl.mozRequestFullScreen ||
                                 docEl.webkitRequestFullscreen ||
                                 docEl.msRequestFullscreen;
-            
+
             if (requestMethod) {
                 requestMethod.call(docEl).catch(err => {
                     console.log('⚠️ Fullscreen failed:', err.message);
@@ -519,9 +521,139 @@ class ChildLifeCalendar {
         }
     }
 
+    // ---- Display rotation ------------------------------------------------
+
+    startRotation() {
+        this.stopRotation();
+        this.rotationIndex = 0;
+        this.renderCurrentScreen();
+
+        const seconds = Math.min(MAX_ROTATION_SECONDS, Math.max(MIN_ROTATION_SECONDS, this.rotationSeconds));
+        this.rotationTimer = setInterval(() => this.rotationTick(), seconds * 1000);
+        console.log(`🔁 Rotation started (${seconds}s per screen, ${this.rotationSequence.length} screens)`);
+    }
+
+    stopRotation() {
+        if (this.rotationTimer) {
+            clearInterval(this.rotationTimer);
+            this.rotationTimer = null;
+        }
+    }
+
+    rotationTick() {
+        if (this.currentView !== 'display') return;
+        // Pause the rotation while a scheduled video is taking over the screen.
+        if (this.isVideoPlaying) return;
+
+        this.rotationIndex = (this.rotationIndex + 1) % this.rotationSequence.length;
+        this.renderCurrentScreen();
+    }
+
+    setRotationSeconds(value) {
+        let seconds = parseInt(value, 10);
+        if (isNaN(seconds)) seconds = DEFAULT_ROTATION_SECONDS;
+        seconds = Math.min(MAX_ROTATION_SECONDS, Math.max(MIN_ROTATION_SECONDS, seconds));
+        this.rotationSeconds = seconds;
+
+        const input = document.getElementById('rotationSeconds');
+        if (input) input.value = seconds;
+
+        this.saveCalendarData();
+
+        // Apply the new timing immediately if we're showing the display.
+        if (this.currentView === 'display') {
+            this.startRotation();
+        }
+    }
+
+    getDateForDayIndex(index) {
+        const date = new Date(this.selectedWeekStart);
+        date.setDate(date.getDate() + index);
+        return date;
+    }
+
+    formatMonthDay(date) {
+        return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+    }
+
+    eventHtml(index) {
+        const text = this.events[index] || "No Event";
+        return text.replace(/\n/g, '<br>');
+    }
+
+    renderCurrentScreen() {
+        const body = document.getElementById('calendarBody');
+        if (!body) return;
+
+        const entry = this.rotationSequence[this.rotationIndex];
+        if (!entry) return;
+
+        if (entry.type === 'day') {
+            body.innerHTML = this.renderDayScreenHTML(entry.day);
+        } else if (entry.type === 'weekgrid') {
+            body.innerHTML = this.renderWeekGridHTML();
+        } else if (entry.type === 'weekend') {
+            body.innerHTML = this.renderWeekendHTML();
+        }
+    }
+
+    renderDayScreenHTML(dayKey) {
+        const dayIndex = DAY_KEYS.indexOf(dayKey);
+        const day = DAYS[dayIndex];
+        const dateStr = this.formatMonthDay(this.getDateForDayIndex(dayIndex));
+
+        const slots = day.indices.map((eventIndex, i) => `
+            <div class="day-screen-slot">
+                <div class="time-label">${TIMES_CAP[i]}</div>
+                <div class="event-text">${this.eventHtml(eventIndex)}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="day-screen">
+                <div class="day-screen-title">${day.name}</div>
+                <div class="day-screen-date">${dateStr}</div>
+                <div class="day-screen-slots">${slots}</div>
+            </div>
+        `;
+    }
+
+    renderDayColumnHTML(dayKey) {
+        const dayIndex = DAY_KEYS.indexOf(dayKey);
+        const day = DAYS[dayIndex];
+        const dateStr = this.formatMonthDay(this.getDateForDayIndex(dayIndex));
+
+        const slots = day.indices.map((eventIndex, i) => `
+            <div class="time-slot">
+                <div class="time-label">${TIMES_CAP[i]}</div>
+                <div class="event-text">${this.eventHtml(eventIndex)}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="day-column">
+                <div class="day-title">${day.name}</div>
+                <div class="day-date">${dateStr}</div>
+                ${slots}
+            </div>
+        `;
+    }
+
+    renderWeekGridHTML() {
+        const columns = WEEKDAY_KEYS.map(key => this.renderDayColumnHTML(key)).join('');
+        return `<div class="week-grid-screen">${columns}</div>`;
+    }
+
+    renderWeekendHTML() {
+        const columns = ['sat', 'sun'].map(key => this.renderDayColumnHTML(key)).join('');
+        return `<div class="weekend-screen">${columns}</div>`;
+    }
+
+    // ---- Views -----------------------------------------------------------
+
     toggleView() {
         if (this.isVideoPlaying) return;
-        
+
         if (this.currentView === 'display') {
             this.switchToEditor();
         } else {
@@ -533,10 +665,11 @@ class ChildLifeCalendar {
         document.getElementById('displayView').style.display = 'flex';
         document.getElementById('editorView').style.display = 'none';
         this.currentView = 'display';
-        this.updateDisplay();
+        this.startRotation();
     }
 
     switchToEditor() {
+        this.stopRotation();
         document.getElementById('displayView').style.display = 'none';
         document.getElementById('editorView').style.display = 'flex';
         this.currentView = 'editor';
@@ -571,41 +704,25 @@ class ChildLifeCalendar {
     }
 
     updateWeekDisplay() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const monthNames = ["January", "February", "March", "April", "May", "June",
-                           "July", "August", "September", "October", "November", "December"];
-        
-        days.forEach((day, i) => {
-            const date = new Date(this.selectedWeekStart);
-            date.setDate(date.getDate() + i);
-            
-            // Update display view
-            const dayDateEl = document.getElementById(`day-date-${day}`);
-            if (dayDateEl) {
-                dayDateEl.textContent = `${monthNames[date.getMonth()]} ${date.getDate()}`;
-            }
-            
+        DAY_KEYS.forEach((day, i) => {
+            const date = this.getDateForDayIndex(i);
+            const label = this.formatMonthDay(date);
+
             // Update editor view
             const editorDateEl = document.getElementById(`editor-date-${day}`);
-            if (editorDateEl) {
-                editorDateEl.textContent = `${monthNames[date.getMonth()]} ${date.getDate()}`;
-            }
-            
+            if (editorDateEl) editorDateEl.textContent = label;
+
             // Update video editor view
             const videoDateEl = document.getElementById(`video-date-${day}`);
-            if (videoDateEl) {
-                videoDateEl.textContent = `${monthNames[date.getMonth()]} ${date.getDate()}`;
-            }
+            if (videoDateEl) videoDateEl.textContent = label;
         });
 
         // Update week dates display
         const weekDatesEl = document.getElementById('weekDates');
         if (weekDatesEl) {
-            const startDate = new Date(this.selectedWeekStart);
-            const endDate = new Date(this.selectedWeekStart);
-            endDate.setDate(endDate.getDate() + 4);
-            
-            weekDatesEl.textContent = `${monthNames[startDate.getMonth()]} ${startDate.getDate()} - ${monthNames[endDate.getMonth()]} ${endDate.getDate()}, ${startDate.getFullYear()}`;
+            const startDate = this.getDateForDayIndex(0);
+            const endDate = this.getDateForDayIndex(6);
+            weekDatesEl.textContent = `${this.formatMonthDay(startDate)} - ${this.formatMonthDay(endDate)}, ${startDate.getFullYear()}`;
         }
 
         // Update week picker
@@ -618,15 +735,9 @@ class ChildLifeCalendar {
         }
     }
 
+    // Re-renders whatever display screen is currently visible.
     updateDisplay() {
-        for (let i = 0; i < 21; i++) {
-            const eventElement = document.getElementById(`event-${i}`);
-            if (eventElement) {
-                // Convert line breaks to <br> tags for proper display
-                const eventText = this.events[i].replace(/\n/g, '<br>');
-                eventElement.innerHTML = eventText;
-            }
-        }
+        this.renderCurrentScreen();
     }
 
     updateInputs() {
@@ -638,6 +749,22 @@ class ChildLifeCalendar {
         }
     }
 
+    // Builds the object persisted under the 'childLifeCalendar' storage key.
+    buildCalendarData() {
+        return {
+            schemaVersion: SCHEMA_VERSION,
+            events: this.events,
+            month: this.currentMonth,
+            qrVisible: this.qrCodeVisible,
+            weekStart: this.selectedWeekStart.toISOString(),
+            rotationSeconds: this.rotationSeconds
+        };
+    }
+
+    saveCalendarData() {
+        localStorage.setItem('childLifeCalendar', JSON.stringify(this.buildCalendarData()));
+    }
+
     saveEvents() {
         for (let i = 0; i < 21; i++) {
             const input = document.getElementById(`input-${i}`);
@@ -646,28 +773,20 @@ class ChildLifeCalendar {
             }
         }
 
-        const calendarData = {
-            events: this.events,
-            month: this.currentMonth,
-            qrVisible: this.qrCodeVisible,
-            weekStart: this.selectedWeekStart.toISOString()
-        };
-
-        localStorage.setItem('childLifeCalendar', JSON.stringify(calendarData));
+        this.saveCalendarData();
         alert('Calendar saved successfully!');
     }
 
     syncVideoScheduleToEvents() {
         console.log('🔄 Syncing video schedule to events...');
-        
-        // Map video schedule keys to event indices
-        const slotToEventMap = {
-            'mon-morning': 0, 'mon-afternoon': 1, 'mon-evening': 2,
-            'tue-morning': 3, 'tue-afternoon': 4, 'tue-evening': 5,
-            'wed-morning': 6, 'wed-afternoon': 7, 'wed-evening': 8,
-            'thu-morning': 9, 'thu-afternoon': 10, 'thu-evening': 11,
-            'fri-morning': 12, 'fri-afternoon': 13, 'fri-evening': 14
-        };
+
+        // Map video schedule keys to event indices (all seven days).
+        const slotToEventMap = {};
+        DAYS.forEach(day => {
+            TIMES.forEach((time, i) => {
+                slotToEventMap[`${day.key}-${time}`] = day.indices[i];
+            });
+        });
 
         // Update events for each time slot that has videos
         Object.keys(slotToEventMap).forEach(slotKey => {
@@ -677,15 +796,15 @@ class ChildLifeCalendar {
             if (scheduledVideos && scheduledVideos.length > 0) {
                 // Get current event text
                 const currentText = this.events[eventIndex];
-                
+
                 // Build the video schedule text
                 const videoLines = scheduledVideos.map(item => {
                     return `Channel 16: ${item.time} - ${item.video.replace(/\.\w+$/, '')}`;
                 }).join('\n');
-                
-                // Check if current text already has video info (starts with "VIDEO:")
+
+                // Check if current text already has video info
                 const hasVideoInfo = currentText && currentText.includes('Channel 16:');
-                
+
                 if (!currentText || currentText === "No Event" || hasVideoInfo) {
                     // No manual text or only old video info - replace with new video schedule
                     this.events[eventIndex] = videoLines;
@@ -699,26 +818,20 @@ class ChildLifeCalendar {
 
     saveVideoSchedule() {
         console.log('💾 Saving video schedule...');
-        
+
         this.updateVideoSchedule();
         this.syncVideoScheduleToEvents(); // Add video info to event text
-        
+
         const videoData = {
             schedule: this.videoSchedule,
             videoCounters: this.videoCounters
         };
 
         localStorage.setItem('childLifeVideoSchedule', JSON.stringify(videoData));
-        
+
         // Also save the updated events
-        const calendarData = {
-            events: this.events,
-            month: this.currentMonth,
-            qrVisible: this.qrCodeVisible,
-            weekStart: this.selectedWeekStart.toISOString()
-        };
-        localStorage.setItem('childLifeCalendar', JSON.stringify(calendarData));
-        
+        this.saveCalendarData();
+
         this.updateDisplay(); // Refresh the display to show updated events
         alert('Video schedule saved successfully!');
     }
@@ -730,12 +843,18 @@ class ChildLifeCalendar {
             this.events = data.events || new Array(21).fill("No Event");
             this.currentMonth = data.month || 4;
             this.qrCodeVisible = data.qrVisible || false;
-            
+            this.rotationSeconds = data.rotationSeconds || DEFAULT_ROTATION_SECONDS;
+
+            this.migrateLegacyData(data);
+
             if (data.weekStart) {
                 this.selectedWeekStart = new Date(data.weekStart);
             }
-            
+
             document.getElementById('monthSelect').value = this.currentMonth;
+            const rotationInput = document.getElementById('rotationSeconds');
+            if (rotationInput) rotationInput.value = this.rotationSeconds;
+
             this.applyMonthTheme(this.currentMonth);
             this.updateDisplay();
             this.updateInputs();
@@ -749,40 +868,52 @@ class ChildLifeCalendar {
             const data = JSON.parse(videoData);
             this.videoSchedule = data.schedule || {};
             this.videoCounters = data.videoCounters || {};
+            this.initializeVideoCounters(); // ensure weekend slots exist
             this.loadVideoScheduleSelections();
         }
     }
 
-    loadVideoScheduleSelections() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const times = ['morning', 'afternoon', 'evening'];
+    // Pre-v2 data stored a single "Weekend Events" blob at event index 20.
+    // v2 splits the weekend into Sat/Sun Morning/Afternoon/Evening slots, where
+    // index 20 is now Sunday-Evening. Preserve the old blob by moving it into
+    // Saturday-Morning (index 15) so nothing is lost.
+    migrateLegacyData(data) {
+        if (data.schemaVersion >= SCHEMA_VERSION) return;
 
-        days.forEach(day => {
-            times.forEach(time => {
+        const legacyWeekend = this.events[20];
+        if (legacyWeekend && legacyWeekend !== "No Event") {
+            if (!this.events[15] || this.events[15] === "No Event") {
+                this.events[15] = legacyWeekend;
+            }
+            this.events[20] = "No Event";
+            console.log('🔧 Migrated legacy weekend text into Saturday Morning slot');
+        }
+
+        // Persist the migrated, versioned data.
+        this.saveCalendarData();
+    }
+
+    loadVideoScheduleSelections() {
+        DAY_KEYS.forEach(day => {
+            TIMES.forEach(time => {
                 const key = `${day}-${time}`;
                 const scheduledItems = this.videoSchedule[key];
-                
+
                 if (scheduledItems && scheduledItems.length > 0) {
                     const container = document.querySelector(`[data-slot="${key}"] .video-entries`);
                     if (container) {
                         container.innerHTML = '';
-                        
-                        scheduledItems.forEach((item, index) => {
-                            const timeOptions = time === 'morning' ? 
-                                ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'] :
-                                time === 'afternoon' ?
-                                ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'] :
-                                ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
-                            
-                            this.addVideoEntry(container, day, time, timeOptions);
-                            
+
+                        scheduledItems.forEach((item) => {
+                            this.addVideoEntry(container, day, time, TIME_OPTIONS[time]);
+
                             const entries = container.querySelectorAll('.video-entry');
                             const lastEntry = entries[entries.length - 1];
-                            
+
                             if (lastEntry) {
                                 const timeSelect = lastEntry.querySelector('.time-select');
                                 const videoSelect = lastEntry.querySelector('.video-select');
-                                
+
                                 if (timeSelect) timeSelect.value = item.time;
                                 if (videoSelect) videoSelect.value = item.video;
                             }
@@ -803,13 +934,13 @@ class ChildLifeCalendar {
             this.videoSchedule = {};
             this.videoCounters = {};
             this.initializeVideoCounters();
-            
+
             this.updateDisplay();
             this.updateInputs();
-            
+
             localStorage.removeItem('childLifeCalendar');
             localStorage.removeItem('childLifeVideoSchedule');
-            
+
             location.reload();
         }
     }
@@ -822,7 +953,7 @@ class ChildLifeCalendar {
     updateQRCode() {
         const qrCode = document.getElementById('qrCode');
         const button = document.getElementById('toggleQR');
-        
+
         if (this.qrCodeVisible) {
             qrCode.classList.add('active');
             button.textContent = 'Turn QR Code off';

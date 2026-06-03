@@ -130,9 +130,77 @@ body {
     border-radius: 10px;
     padding: 30px;
     flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Rotation screens fill the calendar body */
+.week-grid-screen {
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
+}
+
+.weekend-screen {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    align-content: stretch;
+}
+
+/* Single-day screen: large and readable from across the room */
+.day-screen {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.day-screen-title {
+    font-family: 'Wendy One', sans-serif;
+    font-size: 5rem;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.day-screen-date {
+    font-size: 2.2rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.day-screen-slots {
+    width: 100%;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.day-screen-slot {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-screen-slot .time-label {
+    font-family: 'Wendy One', sans-serif;
+    font-size: 2.4rem;
+    font-weight: normal;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.day-screen-slot .event-text {
+    font-size: 1.8rem;
+    line-height: 1.5;
 }
 
 .day-column {

@@ -38,97 +38,8 @@
                 </div>
             </div>
             
-            <div class="calendar-body" id="calendarBody">
-                <div class="day-column">
-                    <div class="day-title">Monday</div>
-                    <div class="day-date" id="day-date-mon">April 13</div>
-                    <div class="time-slot">
-                        <div class="time-label">Morning</div>
-                        <div class="event-text" id="event-0">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Afternoon</div>
-                        <div class="event-text" id="event-1">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Evening</div>
-                        <div class="event-text" id="event-2">No Event</div>
-                    </div>
-                </div>
-
-                <div class="day-column">
-                    <div class="day-title">Tuesday</div>
-                    <div class="day-date" id="day-date-tue">April 14</div>
-                    <div class="time-slot">
-                        <div class="time-label">Morning</div>
-                        <div class="event-text" id="event-3">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Afternoon</div>
-                        <div class="event-text" id="event-4">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Evening</div>
-                        <div class="event-text" id="event-5">No Event</div>
-                    </div>
-                </div>
-
-                <div class="day-column">
-                    <div class="day-title">Wednesday</div>
-                    <div class="day-date" id="day-date-wed">April 15</div>
-                    <div class="time-slot">
-                        <div class="time-label">Morning</div>
-                        <div class="event-text" id="event-6">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Afternoon</div>
-                        <div class="event-text" id="event-7">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Evening</div>
-                        <div class="event-text" id="event-8">No Event</div>
-                    </div>
-                </div>
-
-                <div class="day-column">
-                    <div class="day-title">Thursday</div>
-                    <div class="day-date" id="day-date-thu">April 16</div>
-                    <div class="time-slot">
-                        <div class="time-label">Morning</div>
-                        <div class="event-text" id="event-9">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Afternoon</div>
-                        <div class="event-text" id="event-10">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Evening</div>
-                        <div class="event-text" id="event-11">No Event</div>
-                    </div>
-                </div>
-
-                <div class="day-column">
-                    <div class="day-title">Friday</div>
-                    <div class="day-date" id="day-date-fri">April 17</div>
-                    <div class="time-slot">
-                        <div class="time-label">Morning</div>
-                        <div class="event-text" id="event-12">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Afternoon</div>
-                        <div class="event-text" id="event-13">No Event</div>
-                    </div>
-                    <div class="time-slot">
-                        <div class="time-label">Evening</div>
-                        <div class="event-text" id="event-14">No Event</div>
-                    </div>
-                </div>
-
-                <div class="weekend-section">
-                    <div class="weekend-title">Weekend Events</div>
-                    <div class="event-text" id="event-20">No Event</div>
-                </div>
-            </div>
+            <!-- Rotating display screens are rendered here by JavaScript -->
+            <div class="calendar-body" id="calendarBody"></div>
         </div>
 
         <!-- Editor View -->
@@ -157,6 +68,8 @@
                     </select>
                     <label for="weekPicker">Week Start:</label>
                     <input type="date" id="weekPicker">
+                    <label for="rotationSeconds">Seconds per screen:</label>
+                    <input type="number" id="rotationSeconds" min="3" max="600" step="1" value="15">
                 </div>
             </div>
 
