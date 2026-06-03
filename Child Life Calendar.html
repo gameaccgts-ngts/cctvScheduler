@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Child Life Calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Wendy+One&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Video Player -->
+        <div id="videoPlayer" class="video-player">
+            <video id="mainVideo" controls autoplay>
+                Your browser does not support video playback.
+            </video>
+            <div class="video-controls">
+                <button id="stopVideoBtn">Stop Video</button>
+                <button id="skipVideoBtn">Skip</button>
+            </div>
+        </div>
+
+        <!-- Display View -->
+        <div id="displayView" class="calendar-display">
+            <div class="calendar-header">
+                <div class="calendar-title">CHILD LIFE CALENDAR</div>
+                <div class="month-title" id="monthTitle">APRIL</div>
+                <div class="week-dates" id="weekDates">April 13 - April 17, 2024</div>
+                <div class="qr-code" id="qrCode">
+                    <div class="qr-content">
+                        📱<br>
+                        QR Code<br>
+                        Placeholder
+                    </div>
+                </div>
+            </div>
+            
+            <div class="calendar-body" id="calendarBody">
+                <div class="day-column">
+                    <div class="day-title">Monday</div>
+                    <div class="day-date" id="day-date-mon">April 13</div>
+                    <div class="time-slot">
+                        <div class="time-label">Morning</div>
+                        <div class="event-text" id="event-0">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Afternoon</div>
+                        <div class="event-text" id="event-1">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Evening</div>
+                        <div class="event-text" id="event-2">No Event</div>
+                    </div>
+                </div>
+
+                <div class="day-column">
+                    <div class="day-title">Tuesday</div>
+                    <div class="day-date" id="day-date-tue">April 14</div>
+                    <div class="time-slot">
+                        <div class="time-label">Morning</div>
+                        <div class="event-text" id="event-3">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Afternoon</div>
+                        <div class="event-text" id="event-4">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Evening</div>
+                        <div class="event-text" id="event-5">No Event</div>
+                    </div>
+                </div>
+
+                <div class="day-column">
+                    <div class="day-title">Wednesday</div>
+                    <div class="day-date" id="day-date-wed">April 15</div>
+                    <div class="time-slot">
+                        <div class="time-label">Morning</div>
+                        <div class="event-text" id="event-6">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Afternoon</div>
+                        <div class="event-text" id="event-7">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Evening</div>
+                        <div class="event-text" id="event-8">No Event</div>
+                    </div>
+                </div>
+
+                <div class="day-column">
+                    <div class="day-title">Thursday</div>
+                    <div class="day-date" id="day-date-thu">April 16</div>
+                    <div class="time-slot">
+                        <div class="time-label">Morning</div>
+                        <div class="event-text" id="event-9">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Afternoon</div>
+                        <div class="event-text" id="event-10">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Evening</div>
+                        <div class="event-text" id="event-11">No Event</div>
+                    </div>
+                </div>
+
+                <div class="day-column">
+                    <div class="day-title">Friday</div>
+                    <div class="day-date" id="day-date-fri">April 17</div>
+                    <div class="time-slot">
+                        <div class="time-label">Morning</div>
+                        <div class="event-text" id="event-12">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Afternoon</div>
+                        <div class="event-text" id="event-13">No Event</div>
+                    </div>
+                    <div class="time-slot">
+                        <div class="time-label">Evening</div>
+                        <div class="event-text" id="event-14">No Event</div>
+                    </div>
+                </div>
+
+                <div class="weekend-section">
+                    <div class="weekend-title">Weekend Events</div>
+                    <div class="event-text" id="event-20">No Event</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor View -->
+        <div id="editorView" class="editor-view">
+            <div class="editor-header">
+                <div class="editor-title">Weekly Schedule Events Editor</div>
+                <div class="tab-buttons">
+                    <button id="eventsTab" class="tab-button active">Events Editor</button>
+                    <button id="videosTab" class="tab-button">Video Schedule</button>
+                </div>
+                <div class="month-selector">
+                    <label for="monthSelect">Colors:</label>
+                    <select id="monthSelect">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4" selected>April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <label for="weekPicker">Week Start:</label>
+                    <input type="date" id="weekPicker">
+                </div>
+            </div>
+
+            <!-- Events Editor Tab -->
+            <div id="eventsEditorTab" class="editor-body">
+                <!-- Monday through Friday columns will be generated here -->
+            </div>
+
+            <!-- Video Schedule Tab -->
+            <div id="videoEditorTab" class="video-editor">
+                <div class="video-header">
+                    <h2>Video Schedule Editor</h2>
+                    <div class="folder-selection">
+                        <label>Video Server:</label>
+                        <div class="folder-display" id="folderDisplay">Checking server...</div>
+                        <button type="button" class="btn-secondary" id="refreshVideosBtn">Refresh Videos</button>
+                    </div>
+                </div>
+
+                <div class="video-grid" id="videoGrid">
+                    <!-- Video schedule grid will be generated here -->
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="toggleQR" class="btn-secondary">Turn QR Code on</button>
+                <button id="saveBtn" class="btn-primary">SAVE</button>
+                <button id="resetBtn" class="btn-danger">RESET</button>
+                <button id="loadBtn" class="btn-secondary">LOAD</button>
+                <button id="saveVideosBtn" class="btn-success" style="display:none;">SAVE VIDEOS</button>
+                <button id="displayBtn" class="btn-primary">DISPLAY CALENDAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app-server-version.js"></script>
+</body>
+</html>

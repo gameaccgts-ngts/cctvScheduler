@@ -1,0 +1,16 @@
+{
+  "name": "Child Life Calendar",
+  "short_name": "CL Calendar",
+  "description": "Interactive calendar for child life events with video scheduling",
+  "start_url": "./Child Life Calendar.html",
+  "display": "fullscreen",
+  "background_color": "#76c2ef",
+  "theme_color": "#76c2ef",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "sizes": "48x48",
+      "type": "image/png"
+    }
+  ]
+}
