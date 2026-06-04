@@ -73,31 +73,32 @@ body {
 
 .calendar-header {
     background: #76c2ef;
-    padding: 30px;
+    padding: clamp(12px, 2vh, 30px) 30px;
     text-align: center;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin-bottom: clamp(8px, 1.5vh, 20px);
     position: relative;
+    flex-shrink: 0;
 }
 
 .calendar-title {
     font-family: 'Wendy One', sans-serif;
-    font-size: 3.5rem;
+    font-size: clamp(1.4rem, 3.5vw, 3.5rem);
     font-weight: normal;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     color: white;
 }
 
 .month-title {
     font-family: 'Wendy One', sans-serif;
-    font-size: 2.5rem;
+    font-size: clamp(1.1rem, 2.6vw, 2.5rem);
     font-weight: normal;
     color: white;
 }
 
 .week-dates {
-    font-size: 1.2rem;
-    margin-top: 10px;
+    font-size: clamp(0.75rem, 1.4vw, 1.2rem);
+    margin-top: 6px;
     color: rgba(255, 255, 255, 0.9);
 }
 
@@ -139,15 +140,17 @@ body {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
+    gap: clamp(8px, 1vw, 20px);
+    min-height: 0;
 }
 
 .weekend-screen {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 40px;
+    gap: clamp(12px, 2vw, 40px);
     align-content: stretch;
+    min-height: 0;
 }
 
 /* Single-day screen: large and readable from across the room */
@@ -156,11 +159,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 0;
 }
 
 .day-screen-title {
     font-family: 'Wendy One', sans-serif;
-    font-size: 5rem;
+    font-size: clamp(2rem, 6vw, 5rem);
     font-weight: normal;
     color: white;
     text-align: center;
@@ -168,78 +172,84 @@ body {
 }
 
 .day-screen-date {
-    font-size: 2.2rem;
+    font-size: clamp(1rem, 2.5vw, 2.2rem);
     color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 25px;
+    margin-bottom: clamp(10px, 2vh, 25px);
     text-align: center;
 }
 
 .day-screen-slots {
     width: 100%;
     flex: 1;
+    min-height: 0;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
+    gap: clamp(12px, 2vw, 30px);
 }
 
 .day-screen-slot {
     background: rgba(255, 255, 255, 0.12);
     border-radius: 14px;
-    padding: 30px;
+    padding: clamp(14px, 2vw, 30px);
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .day-screen-slot .time-label {
     font-family: 'Wendy One', sans-serif;
-    font-size: 2.4rem;
+    font-size: clamp(1.2rem, 3vw, 2.4rem);
     font-weight: normal;
     color: white;
-    margin-bottom: 20px;
+    margin-bottom: clamp(8px, 1.5vh, 20px);
 }
 
 .day-screen-slot .event-text {
-    font-size: 1.8rem;
-    line-height: 1.5;
+    font-size: clamp(1rem, 2vw, 1.8rem);
+    line-height: 1.4;
 }
 
 .day-column {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    padding: 20px;
+    padding: clamp(8px, 1vw, 20px);
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .day-title {
     font-family: 'Wendy One', sans-serif;
-    font-size: 1.5rem;
+    font-size: clamp(0.85rem, 1.5vw, 1.5rem);
     font-weight: normal;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     text-align: center;
     color: white;
 }
 
 .day-date {
-    font-size: 1rem;
-    margin-bottom: 20px;
+    font-size: clamp(0.7rem, 1.1vw, 1rem);
+    margin-bottom: clamp(8px, 1.2vh, 20px);
     text-align: center;
     color: rgba(255, 255, 255, 0.8);
 }
 
 .time-slot {
-    margin-bottom: 20px;
+    margin-bottom: clamp(8px, 1.2vh, 20px);
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 15px;
-    min-height: 80px;
+    padding: clamp(8px, 0.9vw, 15px);
+    min-height: 0;
+    min-width: 0;
 }
 
 .time-label {
     font-family: 'Wendy One', sans-serif;
-    font-size: 1.1rem;
+    font-size: clamp(0.75rem, 1.1vw, 1.1rem);
     font-weight: normal;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: white;
 }
 
@@ -248,8 +258,10 @@ body {
     font-style: normal;
     font-weight: 600;
     color: #333;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: clamp(0.7rem, 0.95vw, 0.95rem);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .weekend-section {
@@ -719,15 +731,9 @@ body {
 }
 
 /* Responsive Design */
+/* Display titles scale fluidly via clamp(), so no fixed font overrides
+   here. These queries only adjust the EDITOR layout on smaller screens. */
 @media (max-width: 1024px) {
-    .calendar-title {
-        font-size: 2.5rem;
-    }
-    
-    .month-title {
-        font-size: 1.8rem;
-    }
-    
     .editor-body,
     .video-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -735,30 +741,16 @@ body {
 }
 
 @media (max-width: 768px) {
-    .calendar-body,
     .editor-body,
     .video-grid {
         grid-template-columns: 1fr;
         gap: 10px;
     }
-    
-    .controls,
+
     .tab-buttons {
         flex-wrap: wrap;
     }
-    
-    .calendar-title {
-        font-size: 2rem;
-    }
-    
-    .month-title {
-        font-size: 1.5rem;
-    }
-    
-    .week-dates {
-        font-size: 1rem;
-    }
-    
+
     .formatting-toolbar {
         justify-content: center;
     }
@@ -768,26 +760,14 @@ body {
     .container {
         padding: 10px;
     }
-    
+
     .calendar-display,
     .editor-view,
     .video-editor {
         padding: 10px;
     }
-    
-    .calendar-header {
-        padding: 20px;
-    }
-    
-    .calendar-title {
-        font-size: 1.5rem;
-    }
-    
-    .month-title {
-        font-size: 1.2rem;
-    }
-    
-    .controls button {
+
+    .menu-panel button {
         padding: 8px 16px;
         font-size: 0.9rem;
     }
