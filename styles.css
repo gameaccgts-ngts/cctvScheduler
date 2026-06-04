@@ -366,7 +366,7 @@ body {
     font-family: 'Wendy One', sans-serif;
     text-align: center;
     margin-bottom: 5px;
-    font-size: 1.2rem;
+    font-size: clamp(0.8rem, 1.3vw, 1.2rem);
     font-weight: normal;
 }
 
@@ -519,7 +519,7 @@ body {
     font-family: 'Wendy One', sans-serif;
     text-align: center;
     margin-bottom: 5px;
-    font-size: 1.2rem;
+    font-size: clamp(0.8rem, 1.3vw, 1.2rem);
     font-weight: normal;
 }
 
