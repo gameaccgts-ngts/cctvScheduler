@@ -522,8 +522,13 @@ class ChildLifeCalendar {
         const videoElement = document.getElementById('mainVideo');
         const videoPlayer = document.getElementById('videoPlayer');
 
+        // Tear the source down properly so the decoded video buffer is
+        // released. Setting `src = ''` resolves to the page URL (the element
+        // would try to load the HTML page as a video and leak), so remove the
+        // attribute and call load() to fully reset the element instead.
         videoElement.pause();
-        videoElement.src = '';
+        videoElement.removeAttribute('src');
+        videoElement.load();
         videoPlayer.style.display = 'none';
         this.isVideoPlaying = false;
 
@@ -1018,6 +1023,22 @@ class ChildLifeCalendar {
         }
     }
 }
+
+// Self-heal watchdog for the always-on display.
+// If an uncaught error or rejected promise ever slips through, reload the page
+// automatically (after a short delay) instead of leaving a broken screen up
+// until someone walks over and presses F5. The one-shot flag means we schedule
+// at most one reload per page load, so a single hiccup can't spin into a tight
+// reload loop.
+let selfHealScheduled = false;
+function scheduleSelfHeal(reason) {
+    if (selfHealScheduled) return;
+    selfHealScheduled = true;
+    console.error('🩹 Self-heal: reloading display in 5s due to:', reason);
+    setTimeout(() => location.reload(), 5000);
+}
+window.addEventListener('error', (e) => scheduleSelfHeal(e.message || 'window error'));
+window.addEventListener('unhandledrejection', (e) => scheduleSelfHeal(e.reason || 'unhandled rejection'));
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
