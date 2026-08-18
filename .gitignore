@@ -12,6 +12,10 @@ videos/*.3gp
 # Generated at setup time
 README-USAGE.txt
 
+# The weekly calendar Word docs are inputs to tools/calendar-converter.html,
+# not code — no need to pile a new one into the repo every week.
+*.docx
+
 # OS / editor cruft
 Thumbs.db
 desktop.ini

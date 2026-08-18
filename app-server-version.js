@@ -79,6 +79,7 @@ class ChildLifeCalendar {
             this.setupEventListeners();
             this.initializeVideoCounters();
             this.loadFromStorage();
+            this.checkForDropInCalendar();
             this.applyMonthTheme(this.currentMonth);
             this.updateWeekDisplay();
             this.checkServerAndLoadVideos();
@@ -907,6 +908,16 @@ class ChildLifeCalendar {
             this.initializeVideoCounters(); // ensure weekend slots exist
             this.loadVideoScheduleSelections();
         }
+    }
+
+    // Looks for a calendar-data.json dropped in next to this app (carried over
+    // from the converter on the office PC) and imports it if it is new. Runs in
+    // the background so a slow or missing file never holds up the display.
+    checkForDropInCalendar() {
+        if (typeof CalendarDropInLoader === 'undefined') return;
+
+        this.dropInLoader = new CalendarDropInLoader(this);
+        this.dropInLoader.check();
     }
 
     // Pre-v2 data stored a single "Weekend Events" blob at event index 20.
