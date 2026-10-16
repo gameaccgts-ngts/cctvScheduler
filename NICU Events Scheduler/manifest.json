@@ -1,7 +1,7 @@
 {
-  "name": "Child Life Calendar",
-  "short_name": "CL Calendar",
-  "description": "Interactive calendar for child life events with video scheduling",
+  "name": "NICU Events Calendar",
+  "short_name": "NICU Events",
+  "description": "Interactive calendar for NICU events with video scheduling",
   "start_url": "./Child Life Calendar.html",
   "display": "fullscreen",
   "background_color": "#76c2ef",
