@@ -1,13 +1,13 @@
 # Large video files — too big for GitHub (100MB/file limit). Keep them local only.
-videos/*.mp4
-videos/*.avi
-videos/*.mov
-videos/*.wmv
-videos/*.flv
-videos/*.webm
-videos/*.mkv
-videos/*.m4v
-videos/*.3gp
+**/videos/*.mp4
+**/videos/*.avi
+**/videos/*.mov
+**/videos/*.wmv
+**/videos/*.flv
+**/videos/*.webm
+**/videos/*.mkv
+**/videos/*.m4v
+**/videos/*.3gp
 
 # Generated at setup time
 README-USAGE.txt

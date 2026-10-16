@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Child Life Calendar — Word to JSON Converter</title>
+<style>
+    :root {
+        --bg: #22303f;
+        --panel: #2c3e50;
+        --panel-2: #34495e;
+        --ink: #ecf0f1;
+        --muted: #9fb3c8;
+        --accent: #76c2ef;
+        --ok: #2ecc71;
+        --warn: #f1c40f;
+        --err: #e74c3c;
+        --line: rgba(255, 255, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 15px;
+    }
+
+    header {
+        max-width: 1400px;
+        margin: 0 auto 20px;
+    }
+
+    h1 {
+        margin: 0 0 4px;
+        font-size: 26px;
+        color: var(--accent);
+    }
+
+    .sub {
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    main {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* ---- Drop zone ---- */
+    #drop {
+        border: 3px dashed var(--accent);
+        border-radius: 12px;
+        background: var(--panel);
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    #drop.over {
+        background: var(--panel-2);
+        border-color: var(--ok);
+    }
+
+    #drop .big { font-size: 20px; font-weight: 600; }
+    #drop .small { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+    /* ---- Messages ---- */
+    #messages { margin: 16px 0; }
+
+    .msg {
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 4px solid var(--muted);
+        background: var(--panel);
+        font-size: 14px;
+        white-space: pre-wrap;
+    }
+
+    .msg.ok   { border-left-color: var(--ok); }
+    .msg.warn { border-left-color: var(--warn); }
+    .msg.err  { border-left-color: var(--err); }
+
+    /* ---- Settings bar ---- */
+    #settings {
+        display: none;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+
+    input[type="date"], select {
+        background: var(--panel-2);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 7px 9px;
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    .check { flex-direction: row; align-items: center; gap: 8px; padding-bottom: 8px; }
+    .check label { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); }
+
+    button {
+        background: var(--accent);
+        color: #10202e;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    button:hover { filter: brightness(1.1); }
+    button.secondary { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); }
+
+    .spacer { flex: 1 1 auto; }
+
+    /* ---- Preview grid ---- */
+    #preview { display: none; }
+
+    .week {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    @media (max-width: 1100px) { .week { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 620px)  { .week { grid-template-columns: 1fr; } }
+
+    .day {
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 0;
+    }
+
+    .day.weekend { opacity: 0.75; }
+
+    .day h2 {
+        margin: 0;
+        font-size: 15px;
+        color: var(--accent);
+    }
+
+    .day .date { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+
+    .slot { margin-bottom: 8px; }
+    .slot span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
+
+    textarea {
+        width: 100%;
+        min-height: 92px;
+        resize: vertical;
+        background: var(--panel-2);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 7px;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+    footer {
+        max-width: 1400px;
+        margin: 24px auto 0;
+        color: var(--muted);
+        font-size: 13px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        line-height: 1.6;
+    }
+
+    code {
+        background: var(--panel);
+        padding: 1px 5px;
+        border-radius: 3px;
+        color: var(--accent);
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Child Life Calendar — Word to JSON Converter</h1>
+    <div class="sub">Runs entirely on this computer. Nothing is uploaded anywhere.</div>
+</header>
+
+<main>
+    <div id="drop">
+        <div class="big">Drop the weekly calendar <strong>.docx</strong> here</div>
+        <div class="small">…or click to browse. You can also paste the calendar text with Ctrl+V.</div>
+        <input type="file" id="fileInput" accept=".docx" hidden>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="settings">
+        <div class="field">
+            <label for="weekStart">Week start (Monday)</label>
+            <input type="date" id="weekStart">
+        </div>
+        <div class="field">
+            <label for="monthSelect">Colour theme</label>
+            <select id="monthSelect"></select>
+        </div>
+        <div class="field check">
+            <input type="checkbox" id="locOwnLine">
+            <label for="locOwnLine">Put the location on its own line</label>
+        </div>
+        <div class="spacer"></div>
+        <button id="downloadBtn">Download calendar-data.json</button>
+        <button id="copyBtn" class="secondary">Copy JSON</button>
+        <button id="resetBtn" class="secondary">Start over</button>
+    </div>
+
+    <div id="preview">
+        <div class="week" id="week"></div>
+    </div>
+</main>
+
+<footer>
+    <strong>How to use this:</strong> drop in the .docx your associate emailed &rarr; check the 21 boxes below and fix anything that landed
+    in the wrong place &rarr; <em>Download calendar-data.json</em> &rarr; copy that file onto the drive &rarr; on the display PC, drop it into the
+    Child Life Calendar folder next to <code>Child Life Calendar.html</code>, replacing the old one &rarr; refresh or reboot the display.
+    The display imports it once and then leaves it alone, so anything you edit on the display PC afterwards stays put.
+</footer>
+
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ * Constants shared with the calendar app (app-server-version.js).
+ * events[] is 21 entries: Mon-Sun, each Morning / Afternoon / Evening.
+ * ------------------------------------------------------------------ */
+const SCHEMA_VERSION = 2;
+const NO_EVENT = 'No Event';
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const SLOT_NAMES = ['Morning', 'Afternoon', 'Evening'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+
+const W  = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
+
+/* Working state: 21 slots of collected rows, plus whatever we learned. */
+let slots = null;          // array[21] of arrays of {time, activity, location}
+let sourceName = '';
+let warnings = [];
+
+/* ------------------------------------------------------------------ *
+ * ZIP reading. A .docx is a ZIP; we only need word/document.xml.
+ * Inflate is done by the browser's built-in DecompressionStream, so
+ * this file stays dependency-free and works offline from file://.
+ * ------------------------------------------------------------------ */
+async function readZipEntry(buffer, wantedName) {
+    const dv = new DataView(buffer);
+    const len = buffer.byteLength;
+
+    // The end-of-central-directory record lives in the last ~64KB.
+    let eocd = -1;
+    const floor = Math.max(0, len - 66000);
+    for (let i = len - 22; i >= floor; i--) {
+        if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('That file is not a valid .docx (no ZIP directory found).');
+
+    const entryCount = dv.getUint16(eocd + 10, true);
+    let off = dv.getUint32(eocd + 16, true);
+    const decoder = new TextDecoder('utf-8');
+
+    for (let n = 0; n < entryCount; n++) {
+        if (dv.getUint32(off, true) !== 0x02014b50) throw new Error('The .docx directory is corrupt.');
+
+        const method   = dv.getUint16(off + 10, true);
+        const compSize = dv.getUint32(off + 20, true);
+        const nameLen  = dv.getUint16(off + 28, true);
+        const extraLen = dv.getUint16(off + 30, true);
+        const cmtLen   = dv.getUint16(off + 32, true);
+        const localOff = dv.getUint32(off + 42, true);
+        const name     = decoder.decode(new Uint8Array(buffer, off + 46, nameLen));
+
+        if (name === wantedName) {
+            if (dv.getUint32(localOff, true) !== 0x04034b50) throw new Error('The .docx is corrupt.');
+            // The local header repeats the name/extra fields with its own lengths.
+            const lNameLen  = dv.getUint16(localOff + 26, true);
+            const lExtraLen = dv.getUint16(localOff + 28, true);
+            const start = localOff + 30 + lNameLen + lExtraLen;
+            const raw = new Uint8Array(buffer, start, compSize);
+
+            if (method === 0) return decoder.decode(raw);
+            if (method !== 8) throw new Error('This .docx uses a compression method we cannot read.');
+
+            const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+            return await new Response(stream).text();
+        }
+
+        off += 46 + nameLen + extraLen + cmtLen;
+    }
+    throw new Error('Could not find word/document.xml inside that .docx.');
+}
+
+/* ------------------------------------------------------------------ *
+ * Word XML helpers.
+ * ------------------------------------------------------------------ */
+
+/* Word writes the same content twice inside mc:AlternateContent: a modern
+ * mc:Choice and a legacy mc:Fallback. Reading both would duplicate the whole
+ * calendar, so take the Choice and only fall back when it gives us nothing —
+ * which is exactly what happens for emoji, where the Choice is a symbol code
+ * and the literal character lives in the Fallback. */
+function alternateBranches(el) {
+    let choice = null, fallback = null;
+    for (const child of el.children) {
+        if (child.namespaceURI !== MC) continue;
+        if (child.localName === 'Choice' && !choice) choice = child;
+        if (child.localName === 'Fallback' && !fallback) fallback = child;
+    }
+    return { choice, fallback };
+}
+
+/* Word 2016+ stores emoji as <w16se:symEx w16se:char="1F60A"/>. */
+function symbolChar(el) {
+    if (el.localName !== 'symEx') return '';
+    for (const attr of el.attributes) {
+        if (attr.localName !== 'char') continue;
+        const code = parseInt(attr.value, 16);
+        if (Number.isFinite(code) && code > 0) return String.fromCodePoint(code);
+    }
+    return '';
+}
+
+function paragraphText(p) {
+    return (function walk(node) {
+        let text = '';
+        for (const child of node.children) {
+            if (child.namespaceURI === MC && child.localName === 'AlternateContent') {
+                const { choice, fallback } = alternateBranches(child);
+                const preferred = choice ? walk(choice) : '';
+                text += preferred || (fallback ? walk(fallback) : '');
+                continue;
+            }
+
+            if (child.namespaceURI === W) {
+                if (child.localName === 't')   { text += child.textContent; continue; }
+                if (child.localName === 'tab') { text += ' ';               continue; }
+                if (child.localName === 'br' || child.localName === 'cr') { text += '\n'; continue; }
+                // Run and paragraph properties are formatting, never content.
+                if (child.localName === 'rPr' || child.localName === 'pPr') continue;
+            }
+
+            const symbol = symbolChar(child);
+            if (symbol) { text += symbol; continue; }
+
+            text += walk(child);
+        }
+        return text;
+    })(p);
+}
+
+function childrenNamed(el, localName) {
+    return Array.from(el.children).filter(c => c.namespaceURI === W && c.localName === localName);
+}
+
+function cellText(tc) {
+    return childrenNamed(tc, 'p')
+        .map(paragraphText)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function tableRows(tbl) {
+    return childrenNamed(tbl, 'tr').map(tr => childrenNamed(tr, 'tc').map(cellText));
+}
+
+/* Returns paragraphs and tables in reading order. This document keeps its
+ * whole calendar inside a text box, so we descend into those rather than
+ * only walking w:body's direct children. */
+function collectBlocks(root) {
+    return (function walk(node) {
+        const blocks = [];
+        for (const child of node.children) {
+            if (child.namespaceURI === MC && child.localName === 'AlternateContent') {
+                const { choice, fallback } = alternateBranches(child);
+                const preferred = choice ? walk(choice) : [];
+                blocks.push(...(preferred.length ? preferred : (fallback ? walk(fallback) : [])));
+                continue;
+            }
+
+            if (child.namespaceURI === W && child.localName === 'tbl') {
+                blocks.push({ type: 'tbl', node: child });
+                continue;
+            }
+
+            if (child.namespaceURI === W && child.localName === 'p') {
+                // A paragraph that merely wraps a text box is a container,
+                // not a line of text — descend instead of flattening it.
+                if (child.getElementsByTagNameNS(W, 'txbxContent').length) {
+                    blocks.push(...walk(child));
+                    continue;
+                }
+                blocks.push({ type: 'p', node: child });
+                continue;
+            }
+
+            blocks.push(...walk(child));
+        }
+        return blocks;
+    })(root);
+}
+
+/* ------------------------------------------------------------------ *
+ * Parsing the calendar itself.
+ * ------------------------------------------------------------------ */
+
+const DAY_RE = new RegExp(
+    '^\\s*(' + DAY_NAMES.join('|') + ')\\b[\\s,:\\-]*' +          // Monday,
+    '(?:(' + MONTH_NAMES.join('|') + ')\\s*(\\d{1,2})|' +          // August 17
+    '(\\d{1,2})\\s*[/\\-.]\\s*(\\d{1,2}))?',                       // or 8/17
+    'i'
+);
+
+function parseDayHeading(text) {
+    const m = DAY_RE.exec(text);
+    if (!m) return null;
+
+    const dayIndex = DAY_NAMES.findIndex(d => d.toLowerCase() === m[1].toLowerCase());
+    let month = null, day = null;
+
+    if (m[2]) {
+        month = MONTH_NAMES.findIndex(x => x.toLowerCase() === m[2].toLowerCase());
+        day = parseInt(m[3], 10);
+    } else if (m[4]) {
+        month = parseInt(m[4], 10) - 1;
+        day = parseInt(m[5], 10);
+    }
+
+    return { dayIndex, month, day };
+}
+
+function to24(hour, meridiem) {
+    return (hour % 12) + (meridiem === 'pm' ? 12 : 0);
+}
+
+/* "9am" -> 9, "1-3pm" -> 13, "11-12pm" -> 11, "1:30-2pm" -> 13.5 */
+function parseStartHour(raw) {
+    const s = String(raw || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, '').replace(/[–—]/g, '-');
+    const re = /(\d{1,2})(?::(\d{2}))?(am|pm|a|p)?/g;
+    const tokens = [];
+    let m;
+    while ((m = re.exec(s)) !== null) {
+        tokens.push({
+            hour: parseInt(m[1], 10),
+            minute: m[2] ? parseInt(m[2], 10) : 0,
+            meridiem: m[3] ? (m[3][0] === 'a' ? 'am' : 'pm') : null
+        });
+    }
+    if (!tokens.length) return null;
+
+    const first = tokens[0];
+    if (first.meridiem) return to24(first.hour, first.meridiem) + first.minute / 60;
+
+    // No am/pm on the start time — borrow it from the end time, then sanity
+    // check: "11-12pm" must be 11am, because 11pm is after 12pm.
+    const tail = tokens.slice(1).reverse().find(t => t.meridiem);
+    if (tail) {
+        let start = to24(first.hour, tail.meridiem);
+        const end = to24(tail.hour, tail.meridiem);
+        if (start > end) start = to24(first.hour, tail.meridiem === 'pm' ? 'am' : 'pm');
+        return start + first.minute / 60;
+    }
+
+    // Nothing to go on: a bare 1-6 on this calendar means the afternoon.
+    return (first.hour >= 1 && first.hour <= 6 ? first.hour + 12 : first.hour) + first.minute / 60;
+}
+
+function slotForHour(hour) {
+    if (hour === null) return 0;
+    if (hour < 12) return 0;    // Morning
+    if (hour < 17) return 1;    // Afternoon
+    return 2;                   // Evening
+}
+
+/* Works out which of the three columns hold time / activity / location.
+ * Falls back to left-to-right order when there is no header row. */
+function columnMap(rows) {
+    for (const row of rows) {
+        const lower = row.map(c => c.toLowerCase());
+        const time = lower.findIndex(c => c === 'time');
+        if (time === -1) continue;
+        const activity = lower.findIndex(c => c === 'activity' || c === 'event');
+        const location = lower.findIndex(c => c === 'location' || c === 'where');
+        return {
+            headerRow: rows.indexOf(row),
+            time,
+            activity: activity === -1 ? 1 : activity,
+            location: location === -1 ? 2 : location
+        };
+    }
+    return { headerRow: -1, time: 0, activity: 1, location: 2 };
+}
+
+function parseDocument(xmlText, fileName) {
+    const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) {
+        throw new Error('The Word document could not be read (XML parse error).');
+    }
+
+    const body = doc.getElementsByTagNameNS(W, 'body')[0];
+    if (!body) throw new Error('The Word document has no body.');
+
+    const blocks = collectBlocks(body);
+
+    const result = {
+        slots: Array.from({ length: 21 }, () => []),
+        dates: {},              // dayIndex -> {month, day}
+        daysSeen: new Set(),
+        warnings: []
+    };
+
+    let currentDay = null;
+
+    for (const block of blocks) {
+        if (block.type === 'p') {
+            const heading = parseDayHeading(paragraphText(block.node));
+            if (heading) {
+                currentDay = heading.dayIndex;
+                result.daysSeen.add(currentDay);
+                if (heading.month !== null && !result.dates[currentDay]) {
+                    result.dates[currentDay] = { month: heading.month, day: heading.day };
+                }
+            }
+            continue;
+        }
+
+        // A table before any day heading has nothing to attach to.
+        if (currentDay === null) {
+            result.warnings.push('A table appeared before any day heading and was skipped.');
+            continue;
+        }
+
+        const rows = tableRows(block.node);
+        const cols = columnMap(rows);
+
+        rows.forEach((row, i) => {
+            if (i === cols.headerRow) return;
+
+            const time     = (row[cols.time]     || '').trim();
+            const activity = (row[cols.activity] || '').trim();
+            const location = (row[cols.location] || '').trim();
+            if (!time && !activity) return;
+
+            const hour = parseStartHour(time);
+            if (hour === null && time) {
+                result.warnings.push(
+                    `${DAY_NAMES[currentDay]}: could not read the time "${time}" — "${activity}" was put in the Morning slot.`
+                );
+            }
+
+            result.slots[currentDay * 3 + slotForHour(hour)].push({ time, activity, location });
+        });
+    }
+
+    if (!result.daysSeen.size) {
+        throw new Error('No day headings (Monday, Tuesday, …) were found in that document.');
+    }
+
+    for (let d = 0; d < 5; d++) {
+        if (!result.daysSeen.has(d)) result.warnings.push(`${DAY_NAMES[d]} was not found in the document.`);
+    }
+
+    result.weekStart = inferWeekStart(result.dates, fileName, result.warnings);
+    return result;
+}
+
+/* The document says "Monday, August 17th" but never the year. Try the
+ * filename first ("8.17.26"), then fall back to whichever nearby year puts
+ * that date on the right weekday. */
+function inferWeekStart(dates, fileName, warnings) {
+    const anchorDay = [0, 1, 2, 3, 4, 5, 6].find(d => dates[d]);
+    if (anchorDay === undefined) {
+        warnings.push('No dates were found in the document — set the week start by hand below.');
+        return mondayOfCurrentWeek();
+    }
+
+    const { month, day } = dates[anchorDay];
+
+    const fromName = yearFromFileName(fileName, month, day);
+    const today = new Date();
+    const thisYear = today.getFullYear();
+    const candidates = fromName ? [fromName] : [thisYear - 1, thisYear, thisYear + 1];
+
+    let best = null;
+    for (const year of candidates) {
+        const date = new Date(year, month, day);
+        if (date.getMonth() !== month || date.getDate() !== day) continue;   // e.g. Feb 29
+        const rightWeekday = date.getDay() === (anchorDay + 1) % 7;
+        const distance = Math.abs(date - today);
+        const score = (rightWeekday ? 0 : 1e12) + distance;
+        if (!best || score < best.score) best = { date, score, rightWeekday };
+    }
+
+    if (!best) {
+        warnings.push('The date in the document did not make sense — set the week start by hand below.');
+        return mondayOfCurrentWeek();
+    }
+    if (!best.rightWeekday) {
+        warnings.push(
+            `${DAY_NAMES[anchorDay]} ${MONTH_NAMES[month]} ${day} is not actually a ${DAY_NAMES[anchorDay]} ` +
+            `in ${best.date.getFullYear()} — double-check the week start below.`
+        );
+    }
+
+    // Step back to that week's Monday, whichever day we anchored on.
+    const monday = new Date(best.date);
+    monday.setDate(monday.getDate() - anchorDay);
+    return monday;
+}
+
+function yearFromFileName(fileName, month, day) {
+    const re = /(\d{1,2})[.\-_/](\d{1,2})[.\-_/](\d{2,4})/g;
+    let m;
+    while ((m = re.exec(fileName || '')) !== null) {
+        const fMonth = parseInt(m[1], 10) - 1;
+        const fDay = parseInt(m[2], 10);
+        let fYear = parseInt(m[3], 10);
+        if (fYear < 100) fYear += 2000;
+        if (fMonth === month && fDay === day) return fYear;
+    }
+    return null;
+}
+
+function mondayOfCurrentWeek() {
+    const today = new Date();
+    const shift = (today.getDay() + 6) % 7;
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    monday.setDate(monday.getDate() - shift);
+    return monday;
+}
+
+/* ------------------------------------------------------------------ *
+ * Plain-text fallback, for a week where the .docx is shaped oddly and
+ * the user just pastes the text in.
+ * ------------------------------------------------------------------ */
+function parsePastedText(text) {
+    const result = {
+        slots: Array.from({ length: 21 }, () => []),
+        dates: {},
+        daysSeen: new Set(),
+        warnings: ['Read from pasted text, so times and activities were split by eye — check every box below.']
+    };
+
+    let currentDay = null;
+
+    for (const rawLine of text.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        const heading = parseDayHeading(line);
+        if (heading) {
+            currentDay = heading.dayIndex;
+            result.daysSeen.add(currentDay);
+            if (heading.month !== null && !result.dates[currentDay]) {
+                result.dates[currentDay] = { month: heading.month, day: heading.day };
+            }
+            continue;
+        }
+
+        if (currentDay === null) continue;
+        if (/^(time|activity|location)\b/i.test(line)) continue;
+
+        // Leading token that looks like a time, then the rest is the activity.
+        const m = /^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?:\s*[-–—]\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)?)\s*[-–—:\t]*\s*(.*)$/i.exec(line);
+        if (!m || !m[2]) continue;
+
+        const time = m[1].trim();
+        const hour = parseStartHour(time);
+        result.slots[currentDay * 3 + slotForHour(hour)].push({ time, activity: m[2].trim(), location: '' });
+    }
+
+    if (!result.daysSeen.size) throw new Error('No day headings (Monday, Tuesday, …) were found in that text.');
+
+    result.weekStart = inferWeekStart(result.dates, '', result.warnings);
+    return result;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rendering the editable preview.
+ * ------------------------------------------------------------------ */
+function formatRow(row, locationOnOwnLine) {
+    const head = row.time ? `${row.time} — ${row.activity}` : row.activity;
+    if (!row.location) return head;
+    return locationOnOwnLine ? `${head}\n${row.location}` : `${head} (${row.location})`;
+}
+
+function slotTextFromRows(rows, locationOnOwnLine) {
+    return rows.map(r => formatRow(r, locationOnOwnLine)).join('\n');
+}
+
+function weekStartValue() {
+    return document.getElementById('weekStart').value;
+}
+
+function weekStartDate() {
+    const value = weekStartValue();
+    if (!value) return mondayOfCurrentWeek();
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+function renderPreview(keepEdits) {
+    const week = document.getElementById('week');
+    const locationOnOwnLine = document.getElementById('locOwnLine').checked;
+    const existing = keepEdits ? readSlotTexts() : null;
+    const start = weekStartDate();
+
+    week.innerHTML = '';
+
+    for (let d = 0; d < 7; d++) {
+        const date = new Date(start);
+        date.setDate(date.getDate() + d);
+
+        const col = document.createElement('div');
+        col.className = 'day' + (d > 4 ? ' weekend' : '');
+
+        const title = document.createElement('h2');
+        title.textContent = DAY_NAMES[d];
+        col.appendChild(title);
+
+        const dateLine = document.createElement('div');
+        dateLine.className = 'date';
+        dateLine.textContent = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+        col.appendChild(dateLine);
+
+        for (let s = 0; s < 3; s++) {
+            const index = d * 3 + s;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'slot';
+
+            const label = document.createElement('span');
+            label.textContent = SLOT_NAMES[s];
+            wrap.appendChild(label);
+
+            const box = document.createElement('textarea');
+            box.id = `slot-${index}`;
+            box.value = existing ? existing[index] : slotTextFromRows(slots[index], locationOnOwnLine);
+            wrap.appendChild(box);
+
+            col.appendChild(wrap);
+        }
+
+        week.appendChild(col);
+    }
+}
+
+function readSlotTexts() {
+    const out = [];
+    for (let i = 0; i < 21; i++) {
+        const box = document.getElementById(`slot-${i}`);
+        out.push(box ? box.value : '');
+    }
+    return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Output.
+ * ------------------------------------------------------------------ */
+function buildJson() {
+    const start = weekStartDate();
+    const events = readSlotTexts().map(text => {
+        const trimmed = text.replace(/\s+$/, '');
+        return trimmed ? trimmed : NO_EVENT;
+    });
+
+    return {
+        schemaVersion: SCHEMA_VERSION,
+        // The display imports a file once and remembers this stamp, so a
+        // re-import only happens when you drop in a newly converted file.
+        generatedAt: new Date().toISOString(),
+        source: sourceName || 'pasted text',
+        weekStart: start.toISOString(),
+        month: Number(document.getElementById('monthSelect').value),
+        events
+    };
+}
+
+function downloadJson() {
+    const text = JSON.stringify(buildJson(), null, 2);
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'calendar-data.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    showMessages([{ kind: 'ok', text: 'calendar-data.json downloaded. Copy it onto the drive and replace the old one on the display PC.' }], true);
+}
+
+async function copyJson() {
+    const text = JSON.stringify(buildJson(), null, 2);
+    try {
+        await navigator.clipboard.writeText(text);
+        showMessages([{ kind: 'ok', text: 'JSON copied to the clipboard.' }], true);
+    } catch (err) {
+        showMessages([{ kind: 'err', text: 'Could not reach the clipboard — use the download button instead.' }], true);
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Wiring.
+ * ------------------------------------------------------------------ */
+function showMessages(list, append) {
+    const box = document.getElementById('messages');
+    if (!append) box.innerHTML = '';
+    for (const item of list) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + item.kind;
+        div.textContent = item.text;
+        box.appendChild(div);
+    }
+}
+
+function applyParseResult(parsed, name) {
+    slots = parsed.slots;
+    sourceName = name;
+    warnings = parsed.warnings;
+
+    const start = parsed.weekStart;
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('weekStart').value =
+        `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+    document.getElementById('monthSelect').value = String(start.getMonth() + 1);
+
+    const counted = slots.reduce((sum, rows) => sum + rows.length, 0);
+    const messages = [{
+        kind: 'ok',
+        text: `Read ${counted} activit${counted === 1 ? 'y' : 'ies'} from ${name || 'the pasted text'}, ` +
+              `week of ${MONTH_NAMES[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}.`
+    }];
+    for (const w of warnings) messages.push({ kind: 'warn', text: w });
+
+    showMessages(messages);
+    document.getElementById('settings').style.display = 'flex';
+    document.getElementById('preview').style.display = 'block';
+    renderPreview(false);
+}
+
+async function handleFile(file) {
+    if (!file) return;
+    if (!/\.docx$/i.test(file.name)) {
+        showMessages([{ kind: 'err', text: 'That is not a .docx file. If it is an older .doc, open it in Word and "Save As" a .docx first.' }]);
+        return;
+    }
+
+    try {
+        const buffer = await file.arrayBuffer();
+        const xml = await readZipEntry(buffer, 'word/document.xml');
+        applyParseResult(parseDocument(xml, file.name), file.name);
+    } catch (err) {
+        console.error(err);
+        showMessages([{ kind: 'err', text: 'Could not convert that file: ' + err.message }]);
+    }
+}
+
+function handlePaste(text) {
+    try {
+        applyParseResult(parsePastedText(text), '');
+    } catch (err) {
+        console.error(err);
+        showMessages([{ kind: 'err', text: 'Could not read that text: ' + err.message }]);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const monthSelect = document.getElementById('monthSelect');
+    MONTH_NAMES.forEach((name, i) => {
+        const option = document.createElement('option');
+        option.value = String(i + 1);
+        option.textContent = name;
+        monthSelect.appendChild(option);
+    });
+
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('fileInput');
+
+    drop.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+        handleFile(fileInput.files[0]);
+        fileInput.value = '';
+    });
+
+    ['dragenter', 'dragover'].forEach(type => {
+        drop.addEventListener(type, e => { e.preventDefault(); drop.classList.add('over'); });
+    });
+    ['dragleave', 'drop'].forEach(type => {
+        drop.addEventListener(type, e => { e.preventDefault(); drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', e => {
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        handleFile(file);
+    });
+
+    document.addEventListener('paste', e => {
+        // Don't hijack pasting into the preview boxes.
+        if (e.target && e.target.tagName === 'TEXTAREA') return;
+        const text = e.clipboardData && e.clipboardData.getData('text/plain');
+        if (text && text.trim()) { e.preventDefault(); handlePaste(text); }
+    });
+
+    document.getElementById('weekStart').addEventListener('change', () => {
+        const start = weekStartDate();
+        if (start.getDay() !== 1) {
+            showMessages([{ kind: 'warn', text: 'That date is not a Monday. The display lays the week out starting from Monday.' }], true);
+        }
+        document.getElementById('monthSelect').value = String(start.getMonth() + 1);
+        renderPreview(true);
+    });
+
+    document.getElementById('locOwnLine').addEventListener('change', () => renderPreview(false));
+    document.getElementById('downloadBtn').addEventListener('click', downloadJson);
+    document.getElementById('copyBtn').addEventListener('click', copyJson);
+    document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+});
+</script>
+</body>
+</html>
