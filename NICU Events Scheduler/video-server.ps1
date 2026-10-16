@@ -1,9 +1,9 @@
-# Child Life Calendar - Complete Web Server
-# Serves both the calendar application AND videos from localhost:8080
+# NICU Events Calendar - Complete Web Server
+# Serves both the calendar application AND videos from localhost:8081
 # No CORS issues - everything is same-origin!
 
 param(
-    [int]$Port = 8080,
+    [int]$Port = 8081,
     [string]$VideoFolder = "videos"
 )
 
@@ -18,13 +18,13 @@ if (-not (Test-Path $VideoPath)) {
 }
 
 Write-Host "======================================"
-Write-Host "Child Life Calendar - Web Server"
+Write-Host "NICU Events Calendar - Web Server"
 Write-Host "======================================"
 Write-Host "Starting server on port $Port"
 Write-Host "Serving from: $ScriptDir"
 Write-Host "Videos from: $VideoPath"
 Write-Host ""
-Write-Host "Open your calendar at: http://localhost:$Port/Child Life Calendar.html"
+Write-Host "Open your calendar at: http://localhost:$Port/NICU_Events_Calendar.html"
 Write-Host ""
 Write-Host "To stop the server, close this window or press Ctrl+C"
 Write-Host "======================================"
@@ -51,7 +51,7 @@ try {
         
         # Handle root request - redirect to calendar
         if ($requestedPath -eq "" -or $requestedPath -eq "/") {
-            $requestedPath = "Child Life Calendar.html"
+            $requestedPath = "NICU_Events_Calendar.html"
         }
 
         # Handle /videos/ directory listing request
@@ -176,7 +176,7 @@ try {
 <body>
     <h1>404 - File Not Found</h1>
     <p>Could not find: $requestedPath</p>
-    <p><a href="/Child Life Calendar.html">Go to Calendar</a></p>
+    <p><a href="/NICU_Events_Calendar.html">Go to Calendar</a></p>
 </body>
 </html>
 "@

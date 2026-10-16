@@ -1,4 +1,4 @@
-// Child Life Calendar - Service Worker
+// NICU Events Calendar - Service Worker
 // Simple service worker for PWA functionality
 
 self.addEventListener('install', event => {

@@ -1,8 +1,8 @@
-# Child Life Calendar - Setup Script
+# NICU Events Calendar - Setup Script
 # Run this once on each computer to set up automatic video server startup
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  CHILD LIFE CALENDAR - SETUP WIZARD" -ForegroundColor Cyan
+Write-Host "  NICU EVENTS CALENDAR - SETUP WIZARD" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -11,7 +11,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ServerScriptPath = Join-Path $ScriptDir "video-server.ps1"
 $VideoFolderPath = Join-Path $ScriptDir "videos"
 $StartupFolderPath = [Environment]::GetFolderPath("Startup")
-$ShortcutPath = Join-Path $StartupFolderPath "ChildLifeCalendar-VideoServer.lnk"
+$ShortcutPath = Join-Path $StartupFolderPath "NICU_Events_Calendar-VideoServer.lnk"
 
 Write-Host "Step 1: Checking files..." -ForegroundColor Yellow
 
@@ -44,7 +44,7 @@ $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
 $Shortcut.TargetPath = "powershell.exe"
 $Shortcut.Arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ServerScriptPath`""
 $Shortcut.WorkingDirectory = $ScriptDir
-$Shortcut.Description = "Child Life Calendar Video Server"
+$Shortcut.Description = "NICU Events Calendar Video Server"
 $Shortcut.IconLocation = "imageres.dll,77" # Video camera icon
 $Shortcut.Save()
 
@@ -55,20 +55,20 @@ Write-Host "  Server will start automatically when Windows starts" -ForegroundCo
 Write-Host ""
 Write-Host "Step 4: Testing video server..." -ForegroundColor Yellow
 
-# Check if port 8080 is already in use
-$portInUse = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue
+# Check if port 8081 is already in use
+$portInUse = Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue
 
 if ($portInUse) {
-    Write-Host "⚠ Port 8080 is already in use" -ForegroundColor Yellow
+    Write-Host "⚠ Port 8081 is already in use" -ForegroundColor Yellow
     Write-Host "  The video server might already be running, or another program is using this port" -ForegroundColor Gray
 } else {
-    Write-Host "✓ Port 8080 is available" -ForegroundColor Green
+    Write-Host "✓ Port 8081 is available" -ForegroundColor Green
 }
 
 # Create a helpful readme in the folder
 $readmePath = Join-Path $ScriptDir "README-USAGE.txt"
 $readmeContent = @"
-CHILD LIFE CALENDAR - QUICK START GUIDE
+NICU EVENTS CALENDAR - QUICK START GUIDE
 ========================================
 
 SETUP COMPLETE! ✓
@@ -76,7 +76,7 @@ SETUP COMPLETE! ✓
 What was configured:
 - Video server will start automatically when Windows starts
 - Videos should be placed in the 'videos' folder
-- Server runs on http://localhost:8080/
+- Server runs on http://localhost:8081/
 
 
 HOW TO USE:
@@ -87,7 +87,7 @@ HOW TO USE:
    - Supported formats: .mp4, .avi, .mov, .wmv, .webm, .mkv, etc.
 
 2. OPEN THE CALENDAR:
-   - Double-click 'Child Life Calendar.html'
+   - Double-click 'NICU_Events_Calendar.html'
    - Press ESC key to enter editor mode
    - Go to "Video Schedule" tab
    - Videos from your 'videos' folder will appear in the dropdowns
@@ -99,7 +99,7 @@ HOW TO USE:
 
 4. VIEW THE SERVER:
    - Open a web browser
-   - Go to: http://localhost:8080/
+   - Go to: http://localhost:8081/
    - You'll see a list of all available videos
 
 
@@ -114,7 +114,7 @@ Solution:
 
 Problem: Videos won't play
 Solution:
-  - Open http://localhost:8080/ in your browser
+  - Open http://localhost:8081/ in your browser
   - Try clicking on a video - if it plays in browser, the server works
   - Check that the video file name matches what's in the schedule
 
@@ -131,14 +131,14 @@ CHECK SERVER STATUS:
 --------------------
 To see if the server is running:
 1. Open your web browser
-2. Go to: http://localhost:8080/
+2. Go to: http://localhost:8081/
 3. If you see a list of videos, the server is running!
 
 
 FOLDERS & FILES:
 ----------------
 videos/                    - PUT YOUR VIDEO FILES HERE
-Child Life Calendar.html   - OPEN THIS to use the calendar
+NICU_Events_Calendar.html   - OPEN THIS to use the calendar
 video-server.ps1          - The video server (runs automatically)
 setup.ps1                 - This setup script (only run once)
 
@@ -174,7 +174,7 @@ Write-Host ""
 Write-Host "What happens next:" -ForegroundColor White
 Write-Host "  1. Add your video files to the 'videos' folder" -ForegroundColor Gray
 Write-Host "  2. Restart this computer (or run video-server.ps1 manually now)" -ForegroundColor Gray
-Write-Host "  3. Open 'Child Life Calendar.html' in your browser" -ForegroundColor Gray
+Write-Host "  3. Open 'NICU_Events_Calendar.html' in your browser" -ForegroundColor Gray
 Write-Host "  4. Press ESC to edit, go to Video Schedule tab" -ForegroundColor Gray
 Write-Host "  5. Schedule your videos and click SAVE VIDEOS" -ForegroundColor Gray
 Write-Host ""
@@ -189,7 +189,7 @@ if ($startNow -eq "Y" -or $startNow -eq "y") {
     Start-Process powershell -ArgumentList "-NoExit -ExecutionPolicy Bypass -File `"$ServerScriptPath`""
     Write-Host "✓ Video server started in a new window!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Visit http://localhost:8080/ to see your videos" -ForegroundColor Cyan
+    Write-Host "Visit http://localhost:8081/ to see your videos" -ForegroundColor Cyan
 } else {
     Write-Host ""
     Write-Host "Server will start automatically after you restart your computer." -ForegroundColor Gray

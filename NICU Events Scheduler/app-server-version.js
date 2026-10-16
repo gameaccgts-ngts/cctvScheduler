@@ -1,11 +1,11 @@
 /**
- * Child Life Calendar - Server Version
+ * NICU Events Calendar - Server Version
  * Works with local HTTP server for reliable video playback
  */
 
 'use strict';
 
-const VIDEO_SERVER_URL = 'http://localhost:8080';
+const VIDEO_SERVER_URL = 'http://localhost:8081';
 
 // Single source of truth for the week. Index in this array == day offset from
 // the (Monday) week start, so DAYS[0]=Monday ... DAYS[6]=Sunday.
@@ -38,7 +38,7 @@ const MIN_ROTATION_SECONDS = 3;
 const MAX_ROTATION_SECONDS = 600;
 const SCHEMA_VERSION = 2;
 
-class ChildLifeCalendar {
+class NICUEventsCalendar {
     constructor() {
         // Core data
         this.events = new Array(21).fill("No Event");
@@ -73,7 +73,7 @@ class ChildLifeCalendar {
     }
 
     init() {
-        console.log('🎯 Child Life Calendar initializing (Server Version)...');
+        console.log('🎯 NICU Events Calendar initializing (Server Version)...');
 
         try {
             this.setupEventListeners();
@@ -786,7 +786,7 @@ class ChildLifeCalendar {
         }
     }
 
-    // Builds the object persisted under the 'childLifeCalendar' storage key.
+    // Builds the object persisted under the 'nicuEventsCalendar' storage key.
     buildCalendarData() {
         return {
             schemaVersion: SCHEMA_VERSION,
@@ -799,7 +799,7 @@ class ChildLifeCalendar {
     }
 
     saveCalendarData() {
-        localStorage.setItem('childLifeCalendar', JSON.stringify(this.buildCalendarData()));
+        localStorage.setItem('nicuEventsCalendar', JSON.stringify(this.buildCalendarData()));
     }
 
     saveEvents() {
@@ -864,7 +864,7 @@ class ChildLifeCalendar {
             videoCounters: this.videoCounters
         };
 
-        localStorage.setItem('childLifeVideoSchedule', JSON.stringify(videoData));
+        localStorage.setItem('nicuEventsVideoSchedule', JSON.stringify(videoData));
 
         // Also save the updated events
         this.saveCalendarData();
@@ -874,7 +874,7 @@ class ChildLifeCalendar {
     }
 
     loadFromStorage() {
-        const savedData = localStorage.getItem('childLifeCalendar');
+        const savedData = localStorage.getItem('nicuEventsCalendar');
         if (savedData) {
             const data = JSON.parse(savedData);
             this.events = data.events || new Array(21).fill("No Event");
@@ -899,7 +899,7 @@ class ChildLifeCalendar {
             this.updateWeekDisplay();
         }
 
-        const videoData = localStorage.getItem('childLifeVideoSchedule');
+        const videoData = localStorage.getItem('nicuEventsVideoSchedule');
         if (videoData) {
             console.log('📼 Loading saved video schedule...');
             const data = JSON.parse(videoData);
@@ -985,8 +985,8 @@ class ChildLifeCalendar {
             this.updateDisplay();
             this.updateInputs();
 
-            localStorage.removeItem('childLifeCalendar');
-            localStorage.removeItem('childLifeVideoSchedule');
+            localStorage.removeItem('nicuEventsCalendar');
+            localStorage.removeItem('nicuEventsVideoSchedule');
 
             location.reload();
         }
@@ -1053,7 +1053,7 @@ window.addEventListener('unhandledrejection', (e) => scheduleSelfHeal(e.reason |
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new ChildLifeCalendar();
+    new NICUEventsCalendar();
 });
 
 // Register service worker

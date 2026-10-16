@@ -1,7 +1,7 @@
 @echo off
 REM Improved video server starter with better path handling
 
-title Child Life Calendar - Video Server
+title NICU Events Calendar - Video Server
 
 echo ============================================
 echo STARTING VIDEO SERVER

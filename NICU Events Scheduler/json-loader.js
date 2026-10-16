@@ -1,9 +1,9 @@
 /**
- * Drop-in JSON loader for the Child Life Calendar display PC.
+ * Drop-in JSON loader for the NICU Events Calendar display PC.
  *
  * The display PC has no network, so the week's calendar arrives on a drive as
  * a `calendar-data.json` produced by tools/calendar-converter.html. Drop that
- * file next to `Child Life Calendar.html`, refresh, and this imports it.
+ * file next to `NICU_Events_Calendar.html`, refresh, and this imports it.
  *
  * It imports each file exactly once: the stamp of the last import is kept in
  * localStorage, so a reboot does not undo edits made on the display PC. A new
@@ -13,7 +13,7 @@
 'use strict';
 
 const DROP_IN_FILE = 'calendar-data.json';
-const DROP_IN_STAMP_KEY = 'childLifeCalendarImportStamp';
+const DROP_IN_STAMP_KEY = 'nicuEventsCalendarImportStamp';
 
 class CalendarDropInLoader {
     constructor(calendar) {
